@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anywear AI Try-On</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <header class="popup-header">
+      <div class="brand">
+        <span class="logo-icon">✨</span>
+        <div class="brand-text">
+          <h1>Anywear <span>AI</span></h1>
+          <p class="subtitle">Virtual Try-On</p>
+        </div>
+      </div>
+      <span class="status-badge" id="status-badge">Checking...</span>
+    </header>
+
+    <main class="popup-content">
+      <div class="status-card">
+        <div class="status-row">
+          <span class="label">Camera Access</span>
+          <span class="value" id="camera-status">Not Configured</span>
+        </div>
+        <div class="status-row">
+          <span class="label">Detection Mode</span>
+          <span class="value active">Active (All Stores)</span>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button id="open-onboarding-btn" class="btn primary">
+          <span>📹</span> Camera & Setup
+        </button>
+        <button id="trigger-tryon-btn" class="btn secondary">
+          <span>🛍️</span> Scan Current Page
+        </button>
+      </div>
+
+      <div class="instructions">
+        <p>Browse any shopping site (Zara, ASOS, Amazon) and look for the floating <strong>✨ Try On</strong> button.</p>
+      </div>
+    </main>
+
+    <footer class="popup-footer">
+      <span>Anywear AI v1.0.0</span>
+      <a href="#" id="help-link">Help & Docs</a>
+    </footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

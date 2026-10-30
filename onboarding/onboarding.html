@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <title>Welcome to Anywear AI</title>
   <link rel="stylesheet" href="onboarding.css">
+  
+  <!-- MediaPipe Pose Detection Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
 </head>
-
 <body>
   <div class="card">
     <h1>Welcome to Anywear AI</h1>
     <p>Try on clothes from any website in real time using AI</p>
 
-    <div class="video-container">
-      <video id="webcam-feed" autoplay playsinline muted></video>
+    <div class="video-container" style="position: relative;">
+      <video id="webcam-feed" autoplay playsinline muted style="display:none;"></video>
+      <canvas id="pose-canvas" width="640" height="480"></canvas>
       <div id="camera-status-overlay">Camera Inactive</div>
     </div>
 
@@ -22,5 +25,4 @@
 
   <script src="onboarding.js"></script>
 </body>
-
 </html>

@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const cameraVideo = document.getElementById('webcam-feed');
+  const videoElement = document.getElementById('webcam-feed');
+  const canvasElement = document.getElementById('pose-canvas');
+  const canvasCtx = canvasElement.getContext('2d');
   const enableCamBtn = document.getElementById('enable-cam-btn');
   const statusOverlay = document.getElementById('camera-status-overlay');
 
@@ -7,94 +9,88 @@ document.addEventListener('DOMContentLoaded', () => {
   const garmentUrl = urlParams.get('garment');
 
   let garmentImg = null;
-
   if (garmentUrl) {
     garmentImg = new Image();
     garmentImg.crossOrigin = 'anonymous';
     garmentImg.src = decodeURIComponent(garmentUrl);
   }
 
+  // Initialize MediaPipe Pose Engine
+  const pose = new Pose({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+  });
+
+  pose.setOptions({
+    modelComplexity: 1,
+    smoothLandmarks: true,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
+  });
+
+  pose.onResults((results) => {
+    // Hide overlay status once tracking starts
+    if (statusOverlay) statusOverlay.style.display = 'none';
+
+    canvasCtx.save();
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    
+    // Draw raw video frame onto canvas
+    canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+    // Track shoulder and hip landmarks if body detected
+    if (results.poseLandmarks && garmentImg && garmentImg.complete) {
+      const leftShoulder = results.poseLandmarks[11];  // Landmark 11
+      const rightShoulder = results.poseLandmarks[12]; // Landmark 12
+      const leftHip = results.poseLandmarks[23];      // Landmark 23
+
+      if (leftShoulder && rightShoulder) {
+        // Calculate dynamic shoulder coordinates on screen
+        const lsX = leftShoulder.x * canvasElement.width;
+        const lsY = leftShoulder.y * canvasElement.height;
+        const rsX = rightShoulder.x * canvasElement.width;
+        const rsY = rightShoulder.y * canvasElement.height;
+
+        // Calculate body width and tilt angle
+        const shoulderWidth = Math.hypot(rsX - lsX, rsY - lsY);
+        const garmentWidth = shoulderWidth * 1.8; 
+        const garmentHeight = garmentWidth * (garmentImg.naturalHeight / garmentImg.naturalWidth);
+
+        const centerX = (lsX + rsX) / 2;
+        const centerY = (lsY + rsY) / 2;
+        const angle = Math.atan2(rsY - lsY, rsX - lsX);
+
+        // Render garment pinned dynamically to body center
+        canvasCtx.translate(centerX, centerY);
+        canvasCtx.rotate(angle);
+        canvasCtx.drawImage(
+          garmentImg,
+          -garmentWidth / 2,
+          -garmentHeight * 0.15,
+          garmentWidth,
+          garmentHeight
+        );
+        canvasCtx.restore();
+      }
+    } else {
+      canvasCtx.restore();
+    }
+  });
+
+  // Start Camera Stream
   if (enableCamBtn) {
     enableCamBtn.addEventListener('click', async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        if (cameraVideo) {
-          cameraVideo.srcObject = stream;
-        }
-        if (statusOverlay) {
-          statusOverlay.style.display = 'none';
-        }
-
-        startInteractiveTryOn(cameraVideo, garmentImg);
+        const camera = new Camera(videoElement, {
+          onFrame: async () => {
+            await pose.send({ image: videoElement });
+          },
+          width: 640,
+          height: 480
+        });
+        camera.start();
       } catch (err) {
-        alert('Camera access failed: ' + err.message);
+        alert('Camera tracking initialization failed: ' + err.message);
       }
     });
   }
 });
-
-function startInteractiveTryOn(videoElement, garmentImage) {
-  let container = videoElement.parentElement;
-  container.style.position = 'relative';
-
-  let garmentOverlay = document.getElementById('garment-overlay-img');
-  if (!garmentOverlay && garmentImage) {
-    garmentOverlay = document.createElement('img');
-    garmentOverlay.id = 'garment-overlay-img';
-    garmentOverlay.src = garmentImage.src;
-
-    // Solid rendering styling
-    Object.assign(garmentOverlay.style, {
-      position: 'absolute',
-      top: '40%',
-      left: '25%',
-      width: '50%',
-      cursor: 'grab',
-      opacity: '1',            // 100% solid opacity
-      mixBlendMode: 'normal',   // Disables any transparency blending
-      filter: 'none',           // Clears any filters
-      border: 'none',
-      zIndex: '10'
-    });
-
-    // Dragging logic
-    let isDragging = false;
-    let startX, startY, initialLeft, initialTop;
-
-    garmentOverlay.addEventListener('mousedown', (e) => {
-      isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      initialLeft = garmentOverlay.offsetLeft;
-      initialTop = garmentOverlay.offsetTop;
-      garmentOverlay.style.cursor = 'grabbing';
-    });
-
-    window.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      garmentOverlay.style.left = `${initialLeft + dx}px`;
-      garmentOverlay.style.top = `${initialTop + dy}px`;
-    });
-
-    window.addEventListener('mouseup', () => {
-      isDragging = false;
-      if (garmentOverlay) garmentOverlay.style.cursor = 'grab';
-    });
-
-    // Scroll wheel resizing
-    container.addEventListener('wheel', (e) => {
-      if (e.target === garmentOverlay) {
-        e.preventDefault();
-        let currentWidth = parseFloat(garmentOverlay.style.width) || 50;
-        let newWidth = e.deltaY < 0 ? currentWidth + 3 : currentWidth - 3;
-        if (newWidth > 20 && newWidth < 90) {
-          garmentOverlay.style.width = `${newWidth}%`;
-        }
-      }
-    }, { passive: false });
-
-    container.appendChild(garmentOverlay);
-  }
-}

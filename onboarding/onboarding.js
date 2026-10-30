@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    
+
     // Draw raw video frame onto canvas
     canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Calculate body width and tilt angle
         const shoulderWidth = Math.hypot(rsX - lsX, rsY - lsY);
-        const garmentWidth = shoulderWidth * 1.8; 
+        const garmentWidth = shoulderWidth * 1.8;
         const garmentHeight = garmentWidth * (garmentImg.naturalHeight / garmentImg.naturalWidth);
 
         const centerX = (lsX + rsX) / 2;

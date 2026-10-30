@@ -10,17 +10,16 @@
   "host_permissions": [
     "<all_urls>"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; object-src 'self'"
+  },
   "background": {
     "service_worker": "scripts/background.js"
   },
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "scripts/content.js"
-      ]
+      "matches": ["<all_urls>"],
+      "js": ["scripts/content.js"]
     }
   ],
   "action": {
